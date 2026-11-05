@@ -8,7 +8,7 @@
 
 - Config: `n_layer=1, loop=41, n_head=2, d_head=7, d_model=50, d_mlp=42`. Here `loop` is K_min: any K from 41 to 64
   gives the same strictly correct answers.
-- **355 nonzero weights** (364 − 9). The dense size is 9,286. Every weight is exactly representable in bfloat16.
+- **355 nonzero weights** (364 − 9). The dense size is 9,184. Every weight is exactly representable in bfloat16.
 - Halting signal: an answer position whose column is still being reduced shows `*` as its argmax. The rule "run at
   least 6 passes, then stop at the first pass where no answer position shows `*`" stops at the first pass from which
   the answer is strictly correct.
