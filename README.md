@@ -139,38 +139,47 @@ active heads, and its MLPs and readout across 4,000 problems. The script that dr
 
 ## Adaptive depth
 
-`weights/looped_adaptive.npz` is the looped network edited so that it does not need exactly 42 passes: it is strictly
-correct at every pass count K from 41 to 64, the answer stops changing once it is right, and a busy marker says when
-it is right. The edits are five closed-form changes on top of Astra's build, written by Claude Opus 5.5
-([build/looped_adaptive.py](build/looped_adaptive.py), [explanation](explanations/looped_adaptive.md)).
+The looped network only works at exactly 42 passes. Two weight-edited versions are strictly correct at every pass
+count K from K_min to 64, and both come with a halting rule that a caller runs on the outputs. One edit was written
+by Claude Opus 5.5 ([build/looped_adaptive.py](build/looped_adaptive.py),
+[explanation](explanations/looped_adaptive.md)), the other by GPT-6 Astra in one session of 11 Python runs
+([build/looped_adaptive_astra.py](build/looped_adaptive_astra.py),
+[explanation](explanations/looped_adaptive_astra.md)). Both run Astra's `build/looped.py` and then change a few
+weights in closed form; no training or search.
 
-| | Looped (Astra) | Looped, adaptive (Opus edit) |
-|---|---|---|
-| Nonzero weights | 364 | **355** |
-| Passes that give the right answer | exactly 42 (K = 40, 41, 43, 44, 50: 0 / 1,000) | every K from 41 to 64 |
-| Strict wrong, 1M fresh-seed problems, each K = 39..64 (fp32 / bf16-rounded) | - | 0 / 0 at every K |
-| Strict wrong, all 1M pairs with a, b in 9000..9999, each K = 41..64 | - | 0 / 0 at every K |
-| Min strict margin at K >= 41 | 0.936 (K = 42) | 0.976 |
-| Passes needed per problem, 1M fresh-seed problems | 42 | mean 15.4, median 15, 99th percentile 26, max 39 |
-| Passes needed, a, b in 9000..9999 | 42 | mean 19.8, max 41 (only 9999 x 9999) |
+| | Looped (Astra) | Adaptive, Opus edit | Adaptive, Astra edit |
+|---|---|---|---|
+| Nonzero weights (dense size) | 364 (9,386) | **355** (9,184) | **365** (9,386) |
+| Pass counts that give the right answer | exactly 42 (K = 40, 41, 43, 44, 50: 0 / 1,000) | every K from 41 to 64 | every K from 42 to 64 |
+| Strict wrong, 1M fresh-seed problems, each K from K_min to 64 (fp32 / bf16-rounded) | - | 0 / 0 at every K | 0 / 0 at every K |
+| Strict wrong, all 1M pairs a, b in 9000..9999, each K from K_min to 64 | - | 0 / 0 at every K | 0 / 0 at every K |
+| Min strict margin at K >= K_min | 0.936 (K = 42) | 0.976 | 0.971 |
+| Halting rule | - | from pass 6, stop at the first pass where no answer position's argmax is `*` | from pass 7, stop at the first pass where max over answer positions of logit(1) - logit(0) < 36 |
+| Passes used by the rule, 1M fresh-seed: mean / median / max | 42 | 15.4 / 15 / 39 | 16.4 / 16 / 39 |
+| Passes used by the rule, a, b in 9000..9999: mean / max | 42 | 19.8 / 41 | 20.8 / 42 |
+| Rule stops on a strictly correct answer | - | 2,000,000 / 2,000,000 | 2,000,000 / 2,000,000 |
 
 - **Why 42 only.** The original reads its answer with a one-shot overwrite gated by 255(r - 41). Before pass 42 the
   readout coordinates still hold the input digit; after it the gate stays open and one coordinate grows by about
-  255(r - 41) per pass (64,752 at K = 64). The column arithmetic itself is already stable after pass 41.
-- **What changed.** The overwrite units are deleted and the tied readout reads the column value directly at every
-  pass (the input digit cancels inside the final LayerNorm pair), so the answer is right as soon as the last
-  subtract-10 step is done and stays right. The worst column value, 350, bounds the needed passes by 41 for every
-  operand pair.
-- **Halting.** An answer position whose column is not finished shows `*` as its argmax (3 nonzero weights). Rule,
-  run outside the network: *run at least 6 passes, then stop at the first pass where no answer position shows `*`*.
-  On both 1M sets it stopped exactly at the first strictly correct pass for every problem.
-- **Checks.** Seeds: fresh 2765103521 (`os.urandom`); the second set is exhaustive over a, b in 9000..9999. Every K was
-  read from one 64-pass trajectory per problem; that equals `arch.forward` with `loop = K` bit for bit (checked on
-  2,000 problems at K = 1, 6, 41, 42, 64). All weights are exactly bf16-representable, so the bf16-rounded weights are
-  identical. `python make_weights.py` replays the build in a fresh process and matches `weights/SHA256SUMS`.
-- `verify.py weights/looped_adaptive.npz` checks K = 41 (the config's `loop`); pass another K by loading the config
-  and overriding `loop`. The logits are not bitwise constant across extra passes (clocks and gathered sums keep
-  growing), but every argmax and strict margin above was measured at each K.
+  255(r - 41) per pass (64,752 at K = 64). The column arithmetic itself is already stable after pass 41. Both
+  editors measured this independently.
+- **Opus's fix.** Delete the overwrite and let the tied readout read the column value directly on every pass (the
+  input digit cancels inside a final-LayerNorm pair), so the answer is right as soon as the last subtract-10 step is
+  done. `*` gets a busy logit that wins while a column still needs a subtraction (3 weights). The largest column
+  value, 350 (9999 x 9999), bounds the passes by 41.
+- **Astra's fix.** Keep the overwrite but make it balanced, so repeating it changes nothing, and open it from pass 6
+  (+1 weight). It reads the value one pass behind the arithmetic, so K_min is 42. Its halting rule thresholds the
+  logit gap between digits 1 and 0 at the level of a column value of 9.25. Astra measured that the simpler rule
+  "argmax unchanged for one pass" stops on a wrong answer for 93% of problems, because unfinished columns sit on
+  digit 9 for several passes.
+- **Checks.** Fresh `os.urandom` seeds 2765103521 (Opus network) and 3036933189 (Astra network); the second set is
+  exhaustive over a, b in 9000..9999, which contains the largest columns. Every K was read from one 64-pass
+  trajectory per problem; that equals `arch.forward` with `loop = K` bit for bit (checked on 2,000 problems at
+  K = 1, 6, 41, 42, 64). All weights are exactly bf16-representable, so the bf16-rounded weights are identical.
+  `python make_weights.py` replays every build in a fresh process and matches `weights/SHA256SUMS`.
+- **Scope.** Answers, not logits, are fixed: clocks and gathered sums keep growing, so logits jitter slightly from
+  pass to pass. Tested up to K = 64, the arm's limit. `verify.py` checks the config's `loop` (K_min); load the
+  config and override `loop` for another K.
 
 ## Caveats
 
@@ -204,7 +213,7 @@ build/             one program per network (Astra's, unchanged except the path t
 weights/           the three networks (.npz) and SHA256SUMS
 make_weights.py    rebuild from build/ and check sha256
 verify.py          strict check on random problems or all pairs, fp32 and bf16-rounded weights
-explanations/      how each network computes (Astra's write-ups; looped_adaptive.md is Opus's)
+explanations/      how each network computes (Astra's write-ups, except looped_adaptive.md, which is Opus's)
 figures/           plots of the two-layer network
 ```
 
