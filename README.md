@@ -137,6 +137,41 @@ Coefficients that must cancel are built from bf16-exact factors, so rounding pre
 [figures/](figures/) has three views of the two-layer network: every weight matrix, the attention patterns of the
 active heads, and its MLPs and readout across 4,000 problems. The script that drew them is not included.
 
+## Adaptive depth
+
+`weights/looped_adaptive.npz` is the looped network edited so that it does not need exactly 42 passes: it is strictly
+correct at every pass count K from 41 to 64, the answer stops changing once it is right, and a busy marker says when
+it is right. The edits are five closed-form changes on top of Astra's build, written by Claude Opus 5.5
+([build/looped_adaptive.py](build/looped_adaptive.py), [explanation](explanations/looped_adaptive.md)).
+
+| | Looped (Astra) | Looped, adaptive (Opus edit) |
+|---|---|---|
+| Nonzero weights | 364 | **355** |
+| Passes that give the right answer | exactly 42 (K = 40, 41, 43, 44, 50: 0 / 1,000) | every K from 41 to 64 |
+| Strict wrong, 1M fresh-seed problems, each K = 39..64 (fp32 / bf16-rounded) | - | 0 / 0 at every K |
+| Strict wrong, all 1M pairs with a, b in 9000..9999, each K = 41..64 | - | 0 / 0 at every K |
+| Min strict margin at K >= 41 | 0.936 (K = 42) | 0.976 |
+| Passes needed per problem, 1M fresh-seed problems | 42 | mean 15.4, median 15, 99th percentile 26, max 39 |
+| Passes needed, a, b in 9000..9999 | 42 | mean 19.8, max 41 (only 9999 x 9999) |
+
+- **Why 42 only.** The original reads its answer with a one-shot overwrite gated by 255(r - 41). Before pass 42 the
+  readout coordinates still hold the input digit; after it the gate stays open and one coordinate grows by about
+  255(r - 41) per pass (64,752 at K = 64). The column arithmetic itself is already stable after pass 41.
+- **What changed.** The overwrite units are deleted and the tied readout reads the column value directly at every
+  pass (the input digit cancels inside the final LayerNorm pair), so the answer is right as soon as the last
+  subtract-10 step is done and stays right. The worst column value, 350, bounds the needed passes by 41 for every
+  operand pair.
+- **Halting.** An answer position whose column is not finished shows `*` as its argmax (3 nonzero weights). Rule,
+  run outside the network: *run at least 6 passes, then stop at the first pass where no answer position shows `*`*.
+  On both 1M sets it stopped exactly at the first strictly correct pass for every problem.
+- **Checks.** Seeds: fresh 2765103521 (`os.urandom`); the second set is exhaustive over a, b in 9000..9999. Every K was
+  read from one 64-pass trajectory per problem; that equals `arch.forward` with `loop = K` bit for bit (checked on
+  2,000 problems at K = 1, 6, 41, 42, 64). All weights are exactly bf16-representable, so the bf16-rounded weights are
+  identical. `python make_weights.py` replays the build in a fresh process and matches `weights/SHA256SUMS`.
+- `verify.py weights/looped_adaptive.npz` checks K = 41 (the config's `loop`); pass another K by loading the config
+  and overriding `loop`. The logits are not bitwise constant across extra passes (clocks and gathered sums keep
+  growing), but every argmax and strict margin above was measured at each K.
+
 ## Caveats
 
 - **Upper bounds, not minimums.** No lower bound was established. Astra's own guesses about how much smaller each could
@@ -169,7 +204,7 @@ build/             one program per network (Astra's, unchanged except the path t
 weights/           the three networks (.npz) and SHA256SUMS
 make_weights.py    rebuild from build/ and check sha256
 verify.py          strict check on random problems or all pairs, fp32 and bf16-rounded weights
-explanations/      how each network computes (Astra's write-ups)
+explanations/      how each network computes (Astra's write-ups; looped_adaptive.md is Opus's)
 figures/           plots of the two-layer network
 ```
 

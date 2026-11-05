@@ -18,7 +18,7 @@ import numpy as np
 import arch
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
-NETS = ("two_layer", "one_layer", "looped")
+NETS = ("two_layer", "one_layer", "looped", "looped_adaptive")
 SUMS = os.path.join(ROOT, "weights", "SHA256SUMS")
 
 
