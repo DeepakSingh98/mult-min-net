@@ -21,6 +21,14 @@ m-digit number. It does this through a single looped two-block body and it decid
 The network needs a start token, a looped body and an outer halting loop. Passes grow linearly with length, so this is
 not a fixed-depth forward pass. The caveats are listed in full below.
 
+**What kind of result this is.** The network's attention is position-only. Every q and k column and bias is zero in
+`weights/anylen.npz`, so attention weights depend on distance alone and tokens never choose what they read. Each pass is a
+read of earlier positions at fixed distances plus a per-position MLP. So the network runs as a one-dimensional cellular
+automaton on a transformer block, with information moving left to right (in float32 the read is exactly 13 positions
+wide; see Float32). This is an existence result in a well-known class and not a new capability. Iterative-array
+multipliers date from Atrubin (invented 1962, published 1965), and a network trained by gradient descent reached
+length-general binary multiplication in 2015 (see the comparison section).
+
 ## Network and format
 
 `arch.py` is mult-min-net's `arch.py` with the following changes.
@@ -43,7 +51,9 @@ mark where it starts. The coordinator accepted this as a format change.
 
 Pre-LayerNorm bounds every query and key, so content-addressed attention cannot stay sharp at unbounded length. The only
 sharp reach is a distance bias, and that is local. So all long-range work has to be done by moving data, one position per
-pass: a systolic array (Kung).
+pass: an iterative array (Atrubin 1965), the structure later called a systolic array (Kung 1982). It is not Atrubin's
+circuit. His array is real-time, emitting the nth product digit a fixed delay after the nth input digits. This one starts
+with all digits in place and finishes in 2n + 3m + 2 passes.
 
 - **a-stream.** Each pass, a position takes its left neighbour's S. BOS sits still and holds S = 0 with a tail flag, so
   behind a_0 the stream is flagged zeros.
@@ -186,13 +196,38 @@ teacher's: 78 problems up to 10 x 10, 0 wrong, BUSY never read. Small test, run 
 
 ## Compared with trained models (cited, not rerun)
 
+The closest prior work is the Neural GPU. Training reached length-general multiplication in 2015, in the same class of
+local network whose depth grows with length.
+
+- **Kaiser & Sutskever 2015** (arXiv 1511.08228). A convolutional gated recurrent network applies 3-wide local kernels for
+  as many steps as the input is long. Trained by gradient descent on binary numbers up to 20 bits, it reports 100% fully
+  correct outputs at 20, 25, 200 and 2000 bits. Technical limits stopped testing much above 2000. Usually only a few of
+  the 729 grid-search runs reached 2000 bits. A width-1 version, a one-dimensional grid, also reached 2000 bits. The paper
+  compares the model to a cellular automaton and cites Atrubin's algorithm as the reason to expect long multiplication.
+  Its authors did not manage to learn long decimal multiplication.
+- **Price, Zaremba & Sutskever 2016** (arXiv 1611.00736). Larger models and a base 2 -> 4 -> 10 curriculum learned decimal
+  multiplication. A model under 1% error on random 100-digit problems still failed much more often on structured inputs:
+  single digits padded with many zeros, products that need long carries, and 1111111111 x 1111111111.
+- **Freivalds & Liepins 2017** (arXiv 1702.08727). With each decimal digit encoded in binary, a trained variant went from
+  5-digit training numbers to 50-digit tests, with 2 of 5 models under 1% error.
 - McLeish et al. 2024 (arXiv 2405.17399, Abacus Embeddings) report about 99% on 100-digit addition after training on 20
   digits, and multiplication only up to about 15 digits, mostly in-distribution.
 - Bai et al. 2025 (arXiv 2510.00184) report standard transformers failing at 4 x 4 multiplication (below 1%), and their
   ICoT method reaching 100%.
 
-Those are learned models with different training and scoring. As I read them, neither reports length-general
-multiplication. This is not a head-to-head result.
+Decimal is not the main difference, since trained Neural GPU variants have multiplied decimal numbers since 2016. These
+differences remain:
+- **Programmed, not trained.** This network says nothing about whether its design can be learned.
+- **Failure profile.** Structured inputs are where Price et al. found trained models failing. Here no wrong answer
+  appeared on all-9s, powers of 10 or patterned inputs, and the exact-arithmetic argument does not depend on digit
+  pattern. Their exact inputs were not all run here, though: leading zeros were tested only at n, m <= 3.
+- **Architecture.** Neural GPU kernels see both sides, and it runs a step count set by input length. This network reads
+  only to the left and signals its own halt. Its attention is position-only, so it uses no content-based attention.
+
+McLeish et al. and Bai et al. are learned models with different training and scoring. As I read them, neither reports
+length-general multiplication. None of this is a head-to-head result. For Atrubin I read the abstract and later
+citations, not the full paper. Kung is H. T. Kung, "Why Systolic Architectures?", IEEE Computer 15(1), 1982. Atrubin is
+A. J. Atrubin, "A One-Dimensional Real-Time Iterative Multiplier", IEEE Trans. Electronic Computers EC-14(3), 1965.
 
 ## Cost
 
