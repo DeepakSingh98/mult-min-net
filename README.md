@@ -7,7 +7,7 @@ than learned. GPT-6 Astra wrote the programs. The smallest network we found in e
 |---|---|---:|---:|---|---|---:|
 | Two layers | 8 heads x 2, d_model 512, d_mlp 69 | **487** | 231,658 | 0 / 0 | 0 / 0 | 0.358 / 0.279 |
 | One layer | 24 heads x 4, d_model 96, d_mlp 161 | **927** | 72,257 | 0 / 0 | 0 / 0 | 0.0156 / 0.0156 |
-| One block, looped 42 times | 2 heads x 7, d_model 50, d_mlp 44 | **364** | 9,386 | 0 / 0 | still running | 0.936 / - |
+| One block, looped 42 times | 2 heads x 7, d_model 50, d_mlp 44 | **364** | 9,386 | 0 / 0 | 0 / 0 | 0.936 / 0.932 |
 
 - **Strict** means: at every one of the 8 answer positions, the correct token's logit is strictly above all 13 other
   tokens' logits. A tie counts as wrong.
@@ -192,7 +192,7 @@ weights in closed form; no training or search.
 - **Sampled vs exhaustive.** The 1M-problem results are random samples. The exhaustive column covers every operand
   pair once, on one software stack (PyTorch 2.5.1, CPU). Neither is a proof for other implementations.
 - **Small margin.** The one-layer network's margin is 2^-6. A different softmax or GELU implementation, or GPU kernels,
-  could move logits by more than that. The other two have margins 0.28 (lowest over all 81M pairs) and 0.94 (1M sample).
+  could move logits by more than that. The other two have margins 0.28 and 0.93 (lowest over all 81M pairs).
 - **Redesign, not from scratch.** Astra designed each network while able to see its own earlier, larger build for the
   same task. The earlier builds were two-layer 768-wide networks with 224,420 nonzeros, then argmax-only versions with
   511 / 1,088 / 438. Each `build/` program reads only `arch.py`, so the shipped weights do not depend on the old ones,
