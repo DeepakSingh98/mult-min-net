@@ -1,0 +1,127 @@
+{
+ "scores": {
+  "P1": {
+   "values": {
+    "ng1-low": 0.06392353279081703,
+    "ng1-high": 0.10207868475880154,
+    "ng2-low": 0.01068693414270185,
+    "ng2-high": 0.017214102440056885,
+    "tf-low": 0.010816763873796272,
+    "tf-high": 0.0043605788944612285,
+    "anylen-low": 0.3303400818959787,
+    "anylen-high": 0.34621611760415716,
+    "two-low": 0.0018685450549917426,
+    "two-high": 0.0018685450549917426
+   },
+   "holds": false,
+   "complete": true
+  },
+  "P2": {
+   "values": {
+    "ng1": 0.48151984599718306,
+    "ng2": 0.3776419208578899,
+    "tf": 0.5611018219648811,
+    "anylen": 3.2621903836436863e-10,
+    "two": 7.425544012392285e-14
+   },
+   "holds": true,
+   "complete": true
+  },
+  "P3": {
+   "trained": {
+    "ng1-low-adam 1e-06": 3,
+    "ng1-low-adam 1e-05": 0,
+    "ng1-low-adam 0.0001": 0,
+    "ng1-low-own": 0,
+    "ng1-high-adam 1e-06": 3,
+    "ng1-high-adam 1e-05": 1,
+    "ng1-high-adam 0.0001": 0,
+    "ng1-high-own": 0,
+    "ng2-low-adam 1e-06": 0,
+    "ng2-low-adam 1e-05": 0,
+    "ng2-low-adam 0.0001": 0,
+    "ng2-low-own": 0,
+    "ng2-high-adam 1e-06": 3,
+    "ng2-high-adam 1e-05": 0,
+    "ng2-high-adam 0.0001": 0,
+    "ng2-high-own": 0,
+    "tf-low-adam 1e-06": 3,
+    "tf-low-adam 1e-05": 0,
+    "tf-low-adam 0.0001": 0,
+    "tf-low-own": 0,
+    "tf-high-adam 1e-06": 3,
+    "tf-high-adam 1e-05": 3,
+    "tf-high-adam 0.0001": 1,
+    "tf-high-own": 0
+   },
+   "written": {
+    "anylen-low-adam 1e-06": 0,
+    "anylen-low-adam 1e-05": 0,
+    "anylen-low-adam 0.0001": 0,
+    "anylen-low-adam 0.001": 0,
+    "anylen-high-adam 1e-06": 0,
+    "anylen-high-adam 1e-05": 0,
+    "anylen-high-adam 0.0001": 0,
+    "anylen-high-adam 0.001": 0,
+    "two-low-adam 1e-06": 0,
+    "two-low-adam 1e-05": 0,
+    "two-low-adam 0.0001": 0,
+    "two-low-adam 0.001": 0,
+    "two-high-adam 1e-06": 0,
+    "two-high-adam 1e-05": 0,
+    "two-high-adam 0.0001": 0,
+    "two-high-adam 0.001": 0
+   },
+   "holds": false,
+   "complete": true
+  },
+  "reading5": "no difference",
+  "P4": {
+   "ratio": 37.56274959786511,
+   "untied_first_fail_not_100": 8,
+   "holds": true
+  },
+  "reading6": "loop compounding",
+  "P5": {
+   "cells": {
+    "sgd 1e-12": [
+     0,
+     3
+    ],
+    "sgd 1e-11": [
+     0,
+     0
+    ],
+    "sgd 1e-10": [
+     0,
+     0
+    ],
+    "sgd 1e-09": [
+     0,
+     0
+    ],
+    "sgd 1e-08": [
+     0,
+     0
+    ],
+    "sgd 1e-07": [
+     0,
+     0
+    ],
+    "sgd 1e-06": [
+     0,
+     0
+    ],
+    "sgd 1e-05": [
+     0,
+     0
+    ],
+    "sgd 0.0001": [
+     0,
+     0
+    ]
+   },
+   "holds": true
+  }
+ }
+}

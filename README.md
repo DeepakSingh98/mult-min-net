@@ -221,3 +221,16 @@ figures/           plots of the two-layer network
 
 - The network programs and the explanations were written by GPT-6 Astra.
 - The task format and network family come from Bai et al., arXiv 2510.00184.
+
+## Any length (`anylen/`)
+
+A separate network multiplies n-digit by m-digit numbers for every n and m with one weight set: 870 nonzero weights, no
+position table, a looped two-block body and a BUSY token that shows when it has finished. It uses its own format and
+`arch.py`, so it lives in `anylen/`. Claude Opus 5.5 wrote its `build.py`. See `anylen/REPORT.md` for the design, the
+measurements up to 500 x 500 digits and the limits.
+
+## Follow-up (`followup/`)
+
+The follow-up post hands gradient descent these networks and keeps training. `followup/` has the experiments behind
+it: what training does to a programmed network, how that compares with networks gradient descent found itself, and how
+much of what earlier states decide the gradient can see. Start with `followup/README.md`.

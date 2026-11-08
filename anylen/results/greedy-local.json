@@ -1,0 +1,72 @@
+[
+ {
+  "n": 1,
+  "m": 1,
+  "problems": 20,
+  "wrong": 0,
+  "busy_at_read": 0,
+  "past_end_digits": [
+   0
+  ]
+ },
+ {
+  "n": 3,
+  "m": 2,
+  "problems": 20,
+  "wrong": 0,
+  "busy_at_read": 0,
+  "past_end_digits": [
+   0
+  ]
+ },
+ {
+  "n": 2,
+  "m": 7,
+  "problems": 10,
+  "wrong": 0,
+  "busy_at_read": 0,
+  "past_end_digits": [
+   0
+  ]
+ },
+ {
+  "n": 7,
+  "m": 3,
+  "problems": 10,
+  "wrong": 0,
+  "busy_at_read": 0,
+  "past_end_digits": [
+   0
+  ]
+ },
+ {
+  "n": 5,
+  "m": 5,
+  "problems": 10,
+  "wrong": 0,
+  "busy_at_read": 0,
+  "past_end_digits": [
+   0
+  ]
+ },
+ {
+  "n": 12,
+  "m": 1,
+  "problems": 5,
+  "wrong": 0,
+  "busy_at_read": 0,
+  "past_end_digits": [
+   0
+  ]
+ },
+ {
+  "n": 10,
+  "m": 10,
+  "problems": 3,
+  "wrong": 0,
+  "busy_at_read": 0,
+  "past_end_digits": [
+   0
+  ]
+ }
+]
