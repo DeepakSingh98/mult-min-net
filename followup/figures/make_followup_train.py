@@ -81,7 +81,7 @@ fig.text(tx, 0.56, "Found by gradient descent", fontsize=23, color=C["blue"], fa
 fig.text(tx, 0.50, "At the smallest rate 15 of 18 last.\nAt 10× and 100× they slip later\nand a slip is usually one problem.\nAt 1000× everything breaks fast.",
          fontsize=18, color=C["ink"], linespacing=1.45, va="top")
 
-fig.text(0.035, 0.925, "Training nudges its own networks and knocks ours over", fontsize=44, family="serif", color=C["ink"])
+fig.text(0.035, 0.925, "Training nudges its own networks and knocks programmed ones over", fontsize=34, family="serif", color=C["ink"])
 fig.text(0.035, 0.875, "Keep training a network that gets every problem right. Each dot is one run checked every 25 steps.",
          fontsize=20, color=C["mute"])
 fig.text(0.035, 0.04, "Programmed: the any-length and 487-weight multipliers. Trained: two Neural GPUs (binary multiplication) and a looped "
